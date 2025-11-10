@@ -1,0 +1,286 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  displayName  String
+  role         String   @default("MEMBER")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  incidents        SecurityIncident[]
+  securityTasks    SecurityTask[]
+  workflows        Workflow[]
+  voiceLogs        VoiceLog[]
+  energySnapshots  EnergySnapshot[]
+  journalEntries   JournalEntry[]
+  autopilotRules   AutopilotRule[]
+  financeAccounts  FinanceAccount[]
+  focusSessions    FocusSession[]
+  tutorSnapshots   TutorSnapshot[]
+  sprints          Sprint[]
+  securityProgress SecurityProgress[]
+  securityPreference SecurityPreference?
+}
+
+model SecurityIncident {
+  id             String           @id @default(cuid())
+  title          String
+  severity       String
+  status         String           @default("OPEN")
+  description    String
+  source         String
+  detectedAt     DateTime
+  resolvedAt     DateTime?
+  remediationUrl String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  ownerId String
+  owner   User      @relation(fields: [ownerId], references: [id])
+
+  tasks SecurityTask[]
+}
+
+model SecurityTask {
+  id           String        @id @default(cuid())
+  title        String
+  details      String
+  status       String        @default("PENDING")
+  dueAt        DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  ownerId      String
+  owner        User          @relation(fields: [ownerId], references: [id])
+  incidentId   String?
+  incident     SecurityIncident? @relation(fields: [incidentId], references: [id])
+  checklistUrl String?
+}
+
+model SecurityModule {
+  id          String   @id @default(cuid())
+  title       String
+  summary     String
+  difficulty  String   @default("intermediate")
+  topics      String   @default("[]")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  lessons    SecurityLesson[]
+  challenges VibeChallenge[]
+  progress   SecurityProgress[]
+}
+
+model SecurityLesson {
+  id        String   @id @default(cuid())
+  moduleId  String
+  module    SecurityModule @relation(fields: [moduleId], references: [id])
+  title     String
+  content   String
+  kind      String   @default("text")
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model VibeChallenge {
+  id            String   @id @default(cuid())
+  moduleId      String?
+  module        SecurityModule? @relation(fields: [moduleId], references: [id])
+  prompt        String
+  snippet       String
+  hints         String   @default("[]")
+  solutionNotes String
+  heuristics    String   @default("[]")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model SecurityProgress {
+  id                String   @id @default(cuid())
+  moduleId          String
+  userId            String
+  completedLessons  String   @default("[]")
+  completedChallenges String @default("[]")
+  vibeConfidence    Float    @default(0)
+  notes             String   @default("")
+  updatedAt         DateTime @updatedAt
+  createdAt         DateTime @default(now())
+
+  module SecurityModule @relation(fields: [moduleId], references: [id])
+  user   User           @relation(fields: [userId], references: [id])
+
+  @@unique([moduleId, userId], map: "moduleId_userId_unique")
+}
+
+model SecurityPreference {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  onboardingComplete Boolean  @default(false)
+  preferredTone      String   @default("security")
+  shortcuts          String   @default("[]")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Workflow {
+  id          String        @id @default(cuid())
+  name        String
+  description String
+  visibility  String @default("PRIVATE")
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  ownerId String
+  owner   User @relation(fields: [ownerId], references: [id])
+
+  steps WorkflowStep[]
+  voiceLogs VoiceLog[]
+}
+
+model WorkflowStep {
+  id          String      @id @default(cuid())
+  kind        String
+  position    Int
+  config      String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  workflowId String
+  workflow   Workflow @relation(fields: [workflowId], references: [id])
+}
+
+model VoiceLog {
+  id        String   @id @default(cuid())
+  title     String
+  transcript String
+  createdAt DateTime @default(now())
+  workflowId String?
+  workflow   Workflow? @relation(fields: [workflowId], references: [id])
+
+  ownerId String
+  owner   User @relation(fields: [ownerId], references: [id])
+}
+
+model EnergySnapshot {
+  id            String   @id @default(cuid())
+  recordedAt    DateTime
+  readiness     Int
+  sleepHours    Float
+  hrvScore      Int
+  tags          String   @default("[]")
+  createdAt     DateTime @default(now())
+
+  ownerId String
+  owner   User @relation(fields: [ownerId], references: [id])
+}
+
+model JournalEntry {
+  id        String   @id @default(cuid())
+  content   String
+  mood      Int
+  createdAt DateTime @default(now())
+
+  ownerId String
+  owner   User @relation(fields: [ownerId], references: [id])
+}
+
+model FinanceAccount {
+  id         String    @id @default(cuid())
+  name       String
+  type       String
+  currency   String    @default("USD")
+  balance    Float     @default(0)
+  providerId String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  ownerId String
+  owner   User @relation(fields: [ownerId], references: [id])
+
+  transactions Transaction[]
+  autopilotRules AutopilotRule[]
+}
+
+model Transaction {
+  id          String      @id @default(cuid())
+  description String
+  amount      Float
+  category    String
+  occurredAt  DateTime
+  createdAt   DateTime    @default(now())
+
+  accountId String
+  account   FinanceAccount @relation(fields: [accountId], references: [id])
+}
+
+model AutopilotRule {
+  id             String       @id @default(cuid())
+  name           String
+  percentage     Float
+  destination    String
+  active         Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  ownerId String
+  owner   User @relation(fields: [ownerId], references: [id])
+
+  accountId String?
+  account   FinanceAccount? @relation(fields: [accountId], references: [id])
+}
+
+model Sprint {
+  id          String   @id @default(cuid())
+  title       String
+  objective   String
+  startDate   DateTime
+  endDate     DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  ownerId String
+  owner   User @relation(fields: [ownerId], references: [id])
+
+  focusSessions  FocusSession[]
+  tutorSnapshots TutorSnapshot[]
+}
+
+model FocusSession {
+  id         String   @id @default(cuid())
+  startedAt  DateTime
+  endedAt    DateTime?
+  notes      String?
+  createdAt  DateTime @default(now())
+
+  ownerId String
+  owner   User @relation(fields: [ownerId], references: [id])
+
+  sprintId String?
+  sprint   Sprint? @relation(fields: [sprintId], references: [id])
+}
+
+model TutorSnapshot {
+  id         String   @id @default(cuid())
+  summary    String
+  topics     String   @default("[]")
+  actionItems String   @default("[]")
+  createdAt  DateTime @default(now())
+
+  ownerId String
+  owner   User @relation(fields: [ownerId], references: [id])
+
+  sprintId String?
+  sprint   Sprint? @relation(fields: [sprintId], references: [id])
+}
+

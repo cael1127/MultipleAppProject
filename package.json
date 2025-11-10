@@ -1,0 +1,42 @@
+{
+  "name": "multiapps",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Expo monorepo housing multiple themed apps.",
+  "scripts": {
+    "dev": "echo \"Run npm run dev --workspace <app-name> to start an Expo app\"",
+    "api:dev": "npm run dev --workspace @multiapps/api",
+    "dev:secure-guard": "concurrently \"npm run api:dev\" \"npm run start --workspace @multiapps/secure-guard\"",
+    "dev:nova": "concurrently \"npm run api:dev\" \"npm run start --workspace @multiapps/ai-assistant\"",
+    "dev:bloom": "concurrently \"npm run api:dev\" \"npm run start --workspace @multiapps/wellness-companion\"",
+    "dev:ledger": "concurrently \"npm run api:dev\" \"npm run start --workspace @multiapps/budget-buddy\"",
+    "dev:study": "concurrently \"npm run api:dev\" \"npm run start --workspace @multiapps/study-hub\"",
+    "lint": "eslint \"apps/**/*.{ts,tsx}\" \"packages/**/*.{ts,tsx}\" --max-warnings=0",
+    "format": "prettier --check \"**/*.{js,jsx,ts,tsx,json,md}\""
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "services/*"
+  ],
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@react-native-community/eslint-config": "^3.2.0",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "concurrently": "^8.2.2",
+    "eslint": "^8.57.1",
+    "eslint-plugin-jest": "^27.9.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "eslint-plugin-react": "^7.37.1",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "eslint-plugin-react-native": "^4.1.0",
+    "prettier": "^3.3.3",
+    "typescript": "^5.6.3"
+  }
+}
